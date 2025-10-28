@@ -22,6 +22,7 @@
 
       .board {
         height: 100vh;
+        
       }
     </style>
     <!--  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script> -->
@@ -56,7 +57,7 @@
 
 
         // Every 50 milliseconds, call the update Function (see below)
-        setInterval(update, 50);
+        var interval = setInterval(update, 50);
 
 
         // Every time the box is clicked, call the handleBoxClick Function (see below)
@@ -82,11 +83,6 @@
 
         // TODO 2 - Variable declarations
        var positionX = 0;
-
-
-
-
-
 
 
 
@@ -121,16 +117,162 @@
 
 
 
+        }
+       
+      })();
+    </script>
+  </body>
+</html>
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Bouncing Box</title>
+    <script src="jquery.min.js"></script>
+    <style>
+      .box {
+        width: 70px;
+        height: 70px;
+        background-color: teal;
+        font-size: 300%;
+        text-align: center;
+        user-select: none;
+        display: block;
+        position: absolute;
+        top: 100px;
+        left: 0px;
+      }
+
+      .board {
+        height: 100vh;
+        background-image: url("https://images.rawpixel.com/image_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvcm0zMDktYWV3LTAxM18xXzEuanBn.jpg");
+        background-color: #0854eb;
+        background-position: center;
+        background-size: cover;
+      }
+    </style>
+  </head>
+
+  <body class="board">
+    <div class="box">?</div>
+    <div class="misclick-counter">Misses: 0</div>
+    <div class="game-over">GAME OVER</div>
+
+    <script>
+      (function () {
+        "use strict";
+        var gameOverMessage = jQuery(".game-over");
+
+        var box = jQuery(".box");
+        var board = jQuery(".board");
+        var boardWidth = board.width();
+        var counter = jQuery(".misclick-counter"); 
+        jQuery(window).on("resize", function () {
+          boardWidth = board.width();
+        });
+
+        var interval = setInterval(update, 50);
+
+        box.on("click", handleBoxClick);  
+        board.on("click", handleBoardClick);
+
+        var colorStr = "rgb(210, 180, 140)";
+        box.css("background-color", colorStr);
 
 
-
-
+        function moveBoxTo(newPositionX, newPositionY) {
+          box.css("left", newPositionX);
+          box.css("top", newPositionY);
         }
 
+        function changeBoxText(newText) {
+          box.text(newText);
+        }
 
+        function getRandomColor() {
+          var r = Math.random() * 255;
+          var g = Math.random() * 255;
+          var b = Math.random() * 255;
+          return "rgb(" + r + ", " + g + ", " + b + ")";
+        }
 
+        function endGame() {
+          clearInterval(interval);
+        }
 
-       
+        var positionX = 0;
+        var points = 0;
+        var speed = 10;
+        var positionY = 0;
+        var speedY = 10;
+        var boardHeight = jQuery(window).height();
+        var randNum = Math.random() * 100;
+        var misClicks = 0; // 
+        var gameOver = false;
+
+        function update() {
+          if (gameOver) return;
+
+          positionX += speed;
+          positionY += speedY;
+
+          moveBoxTo(positionX, positionY);
+
+          if (positionX < 0) {
+            speed = -speed;
+          } else if (positionX > boardWidth - box.width()) {
+            speed = -speed;
+          }
+
+          if (positionY < 0) {
+            speedY = -speedY;
+          } else if (positionY > boardHeight - box.height()) {
+            speedY = -speedY;
+          }
+        }
+
+        function handleBoxClick(event) {
+          if (gameOver) return;
+
+          positionX = 0;
+          changeBoxText(points);
+          points++;
+          box.css("background-color", getRandomColor());
+
+          if (points % 3 === 0) {
+            box.css("background-color", getRandomColor());
+            speed = speed + 2;
+          }
+
+          misClicks = 0; 
+          updatemisClicks();
+          event.stopPropagation();
+        }
+
+        function handleBoardClick() {
+          if (gameOver) return;
+
+          misClicks++; 
+          updatemisClicks();
+
+          if (misClicks >= 10) {
+            triggerGameOver();
+            alert("Game Over! Too many missed clicks."); 
+          }
+        }
+
+        function updatemisClicks() {
+          counter.text("Misses: " + misClicks);         }
+
+        function triggerGameOver() {
+          gameOver = true;
+          gameOverMessage.fadeIn(500);
+          speed = 0; // 
+          speedY = 0;
+          box.off("click");
+          board.off("click");
+        }
       })();
     </script>
   </body>
@@ -138,97 +280,11 @@
 
 
 
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bouncing Box — Canvas</title>
-  <style>
-    html,body { height:100%; margin:0; background:#111; display:flex; align-items:center; justify-content:center; }
-    canvas { background: linear-gradient(#0b1220,#07101a); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.6); }
-  </style>
-</head>
-<body>
-  <canvas id="c" width="800" height="480"></canvas>
-  <script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
 
-    // Box object
-    const box = {
-      x: 50, y: 40, w: 48, h: 48,
-      vx: 220, vy: 180, // pixels per second
-      color: '#ffb86b'
-    };
 
-    let last = performance.now();
 
-    // simple physics + elastic collisions with friction
-    function step(now) {
-      const dt = Math.min((now - last) / 1000, 0.05); // clamp dt
-      last = now;
 
-      // gravity optional
-      const gravity = 400; // px/s^2
-      box.vy += gravity * dt;
 
-      // integrate position
-      box.x += box.vx * dt;
-      box.y += box.vy * dt;
 
-      // collision with walls
-      const bounce = 0.82; // elasticity (0-1)
-      const friction = 0.995; // horizontal friction every frame
 
-      // left/right
-      if (box.x < 0) {
-        box.x = 0;
-        box.vx = -box.vx * bounce;
-      } else if (box.x + box.w > canvas.width) {
-        box.x = canvas.width - box.w;
-        box.vx = -box.vx * bounce;
-      }
 
-      // top/bottom
-      if (box.y < 0) {
-        box.y = 0;
-        box.vy = -box.vy * bounce;
-      } else if (box.y + box.h > canvas.height) {
-        box.y = canvas.height - box.h;
-        box.vy = -box.vy * bounce;
-        // simulate ground friction
-        box.vx *= friction;
-      }
-
-      draw();
-      requestAnimationFrame(step);
-    }
-
-    function draw() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      // shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.fillRect(box.x + 8, box.y + box.h + 6, box.w, 6);
-
-      // box
-      ctx.fillStyle = box.color;
-      ctx.fillRect(box.x, box.y, box.w, box.h);
-
-      // highlight
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
-      ctx.fillRect(box.x + 6, box.y + 6, box.w - 12, 6);
-    }
-
-    // start
-    requestAnimationFrame(step);
-
-    // optional: click to give box a push
-    canvas.addEventListener('click', (e) => {
-      box.vx += (Math.random() * 400 - 200);
-      box.vy -= 300;
-    });
-  </script>
-</body>
-</html>
